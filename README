@@ -1,0 +1,79 @@
+This program (filecopier) is a small utility which automatically transfers
+files from one or more monitored folder trees, to remote copies of those
+folder trees.
+
+The intention is that you can work on files on your local PC but they are
+immediately also copied to a remote server (via Windows share or similar
+mechanism) as soon as you change anything. This has the following advantages
+compared to working directly on the remote server:
+
+* Read-only work, such as searches, happens on your local PC only and may be
+  faster.
+* If the remote server is sometimes unavailable, you can continue to work on
+  your files locally.
+* In case of hardware failure (of either your machine or the local server) you
+  now have an ad-hoc backup of all files. 
+
+
+SYSTEM REQUIREMENTS
+
+* Requires Java 7+.
+* Works on Windows.
+* Also intended to work on any Java 7 platform (Linux, Mac), but this has not
+  been fully tested and it uses a slightly different mechanism.
+
+
+USAGE INSTRUCTIONS
+
+You can download filecopier.jar using the links above.
+
+* Configuration
+
+  Create a file called .filecopier in your user home folder which contains one
+  or more lines like:
+
+  c:\source\folder => \\server\target\folder
+
+  - The target doesn't have to be on a Windows share, it can be any folder.
+  - Both source and target folders must exist.
+  - On non-Windows platforms, use forward slashes as normal.
+
+* Initial usage
+
+  Double-click on filecopier.jar to run it. It starts minimised, but you can
+  bring the window back to see what is happening.
+
+  If the target folder is not already a copy of the source folder, you should
+  recopy the entire folder to ensure that it is in synch. You can do this by
+  right-clicking in the filecopier.jar window and choosing 'Wipe and re-copy'
+  for each folder.
+
+* Usage
+
+  Any file that you change in the source folder will be changed in the
+  target folder. This applies to all nested folders.
+
+  - EXCEPTION: Folders named '.git' (and anything within them) are not
+    transferred. (This is currently a hard-coded exception and can't be
+    configured.)
+  - If there are files that are out of synch (because you forgot to have
+    filecopier running while you made some changes), you may see errors. The
+    safest way to fix these is to use 'wipe and re-copy' again.
+  - When the system prints an 'ERROR' message, the corresponding Java exception
+    trace is usually printed to standard error. If you want to see these, you
+    can run the jar file using 'java -jar filecopier.jar' from a command line
+    instead of double-clicking it.
+
+
+BUILD INSTRUCTIONS
+
+In Eclipse, you can build this by double-clicking on 'buildjar.jardesc'. I was
+too lazy to make an ant script but it is rather trivial (just jar up the files
+and the icon).
+
+
+CREDITS
+
+- Code by sam marshall for the Open University.
+- Icon from http://www.icon-king.com/projects/nuvola/ licensed under LGPL-2.1
+ 
