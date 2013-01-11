@@ -25,7 +25,12 @@ SYSTEM REQUIREMENTS
 
 USAGE INSTRUCTIONS
 
-You can download filecopier.jar using the links above.
+You can download filecopier.jar by using the Branch dropdown above to switch
+to 'gh-pages'; then you'll see the binary file. (I hope there might be an
+easier way to download it eventually.)
+
+Note that the file is actually called filecopier.1.0.jar but I am referring to
+it as filecopier.jar for simplicity.
 
 * Configuration
 
@@ -37,6 +42,7 @@ You can download filecopier.jar using the links above.
   - The target doesn't have to be on a Windows share, it can be any folder.
   - Both source and target folders must exist.
   - On non-Windows platforms, use forward slashes as normal.
+  - If there are any special characters, this file should have UTF-8 encoding.
 
 * Initial usage
 
@@ -63,6 +69,18 @@ You can download filecopier.jar using the links above.
     trace is usually printed to standard error. If you want to see these, you
     can run the jar file using 'java -jar filecopier.jar' from a command line
     instead of double-clicking it.
+  - The application does not attempt to copy multiple files simultaneously.
+    For example, if you do a 'wipe and re-copy', nothing else will be updated
+    until that finishes. Changes will be stored in memory in the meantime.
+  - If you quit the application while it is still busy, the target folder may
+    get out of synch and you may need to 'wipe and re-copy' next time. 
+
+* Setup
+
+  It is probably a good idea to ensure the program always runs so that your
+  folders don't get out of synch.
+  
+  - On Windows, you can just drop the filecopier.jar into your startup folder.
 
 
 BUILD INSTRUCTIONS
