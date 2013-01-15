@@ -64,7 +64,7 @@ public class Main extends JFrame
 
 	public Main()
 	{
-		super("FileCopier 1.0");
+		super("FileCopier 1.01");
 		getContentPane().setLayout(new BorderLayout());
 		doc = new DefaultStyledDocument();
 		doc.addStyle("_DEFAULT", null).addAttribute(StyleConstants.Foreground, Color.LIGHT_GRAY);
@@ -85,8 +85,27 @@ public class Main extends JFrame
 		pane.setEditable(false);
 
 		JPopupMenu menu = new JPopupMenu("Commands");
+
+		JMenuItem clear = new JMenuItem(new AbstractAction("Clear display") 
+		{
+			@Override
+			public void actionPerformed(ActionEvent arg0)
+			{
+				try
+				{
+					doc.remove(0, doc.getLength());
+				}
+				catch(BadLocationException e)
+				{
+					e.printStackTrace();
+				}
+			}
+		});
+		menu.add(clear);
+
 		JMenu wipeMenu = new JMenu("Wipe and re-copy");
 		menu.add(wipeMenu);
+
 		pane.setComponentPopupMenu(menu);
 
 		JScrollPane scroll = new JScrollPane(pane, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, 
