@@ -177,6 +177,7 @@ class Watcher extends Thread
 					main.addText(" folders\n");
 				}
 			}
+			main.startupFinished(this);
 
 			try
 			{

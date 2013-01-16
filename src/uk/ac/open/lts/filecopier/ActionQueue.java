@@ -29,6 +29,28 @@ public class ActionQueue extends Thread
 	private final static long ACTION_DELAY = 100;
 	
 	private LinkedList<Action> queue = new LinkedList<Action>();
+	
+	private Handler handler;
+
+	/**
+	 * Interface for owner of queue.
+	 */
+	public interface Handler
+	{
+		/**
+		 * Called when the ActionQueue is idle.
+		 * 
+		 * Called from the action queue thread. 
+		 */
+		public void markBusy();
+		
+		/**
+		 * Called when the ActionQueue is idle.
+		 * 
+		 * Called from the action queue thread. 
+		 */
+		public void markIdle();
+	}
 
 	private abstract static class Action
 	{
@@ -145,9 +167,10 @@ public class ActionQueue extends Thread
 		}
 	}
 	
-	public ActionQueue()
+	public ActionQueue(Handler handler)
 	{
 		super("Action queue");
+		this.handler = handler;
 		start();
 	}
 	
@@ -156,6 +179,7 @@ public class ActionQueue extends Thread
 	{
 		try
 		{
+			boolean busy = false;
 			actionLoop: while(true)
 			{
 				Action first;
@@ -164,9 +188,20 @@ public class ActionQueue extends Thread
 					// Wait for event in queue.
 					while(queue.isEmpty())
 					{
+						if(busy)
+						{
+							busy = false;
+							handler.markIdle();
+						}
 						queue.wait();
 					}
 	
+					if(!busy)
+					{
+						busy = true;
+						handler.markBusy();
+					}
+
 					// Wait until event is due.
 					first = queue.removeFirst();
 					while(true)

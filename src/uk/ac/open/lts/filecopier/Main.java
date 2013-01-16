@@ -28,15 +28,19 @@ import java.util.regex.*;
 import javax.swing.*;
 import javax.swing.text.*;
 
-public class Main extends JFrame
+public class Main extends JFrame implements ActionQueue.Handler
 {
 	private JTextPane pane;
 	private DefaultStyledDocument doc;
 	private LinkedList<Watcher> watchers = new LinkedList<Watcher>();
 	private Object startupSynch = new Object();
-	private ActionQueue queue = new ActionQueue();
+	private ActionQueue queue = new ActionQueue(this);
 	
-	private static String VERSION = "1.02";
+	private Image idleIcon, busyIcon;
+	private boolean status = false, queueBusy = false;
+	private Set<Watcher> waitingStartup = new HashSet<Watcher>();
+
+	private static String VERSION = "1.03";
 	
 	/**
 	 * Gets synch object used during startup to prevent multiple folder
@@ -115,8 +119,9 @@ public class Main extends JFrame
 		getContentPane().add(scroll, BorderLayout.CENTER);
 		
 		setSize(600, 800);
-		setIconImage(Toolkit.getDefaultToolkit().createImage(getClass().getResource("icon.png")));
-		
+		idleIcon = Toolkit.getDefaultToolkit().createImage(getClass().getResource("icon.png"));
+		busyIcon = Toolkit.getDefaultToolkit().createImage(getClass().getResource("icon.busy.png"));
+
 		setState(JFrame.ICONIFIED);
 		setVisible(true);
 		
@@ -131,6 +136,8 @@ public class Main extends JFrame
 		});
 		
 		parseArgs(wipeMenu);
+
+		updateStatus();
 	}
 
 	/**
@@ -207,6 +214,7 @@ public class Main extends JFrame
 					watcher = new Watcher(this, source, target, "c" + (index % COLORS.length), index);
 					watchers.add(watcher);
 				}
+				waitingStartup.add(watcher);
 				final int finalNum = index;
 				wipeMenu.add(new JMenuItem(new AbstractAction(finalNum + " " + source)
 				{
@@ -287,6 +295,54 @@ public class Main extends JFrame
 					e.printStackTrace();
 				}
 				new Main();
+			}
+		});
+	}
+	
+	@Override
+	public void markBusy()
+	{
+		SwingUtilities.invokeLater(new Runnable()
+		{
+			public void run()
+			{
+				queueBusy = true;
+				updateStatus();
+			}
+		});
+	}
+	
+	@Override
+	public void markIdle()
+	{
+		SwingUtilities.invokeLater(new Runnable()
+		{
+			public void run()
+			{
+				queueBusy = false;
+				updateStatus();
+			}
+		});
+	}
+	
+	private void updateStatus()
+	{
+		boolean busy = queueBusy || !waitingStartup.isEmpty();
+		if(status != busy)
+		{
+			status = busy;
+			setIconImage(busy ? busyIcon : idleIcon);
+		}
+	}
+	
+	public void startupFinished(final Watcher watcher)
+	{
+		SwingUtilities.invokeLater(new Runnable()
+		{
+			public void run()
+			{
+				waitingStartup.remove(watcher);
+				updateStatus();
 			}
 		});
 	}
