@@ -18,8 +18,9 @@ Copyright 2013 The Open University
 */
 package uk.ac.open.lts.filecopier;
 
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.*;
+import java.nio.file.WatchEvent.Kind;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 
@@ -28,6 +29,9 @@ import java.util.*;
  */
 class Watcher extends Thread
 {
+	private static boolean DEBUG = false;
+	private static Writer debugWriter;
+
 	private Main main;
 	private Path source, target;
 	private String style;
@@ -61,6 +65,29 @@ class Watcher extends Thread
 	public Path getTarget()
 	{
 		return target;
+	}
+	
+	private void debugLog(Path relative, Kind<?> kind)
+	{
+		if(!DEBUG)
+		{
+			return;
+		}
+		
+		try
+		{
+			if(debugWriter == null)
+			{
+				debugWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(
+					new File(System.getProperty("user.home"), "filecopier.debug.log")), "UTF-8"));
+			}
+			debugWriter.write("[EVENT] " + kind + ": " + relative + "\n");
+			debugWriter.flush();
+		}
+		catch(IOException e)
+		{
+			e.printStackTrace();
+		}
 	}
 	
 	@Override
@@ -163,6 +190,8 @@ class Watcher extends Thread
 					{
 						Path sourcePath = keys.get(key).resolve(event.context().toString());
 						Path relative = source.relativize(sourcePath);
+						Kind<?> kind = event.kind();
+						debugLog(relative, kind);
 						if(relative.isAbsolute() || relative.startsWith(".."))
 						{
 							// Should not get results outside the source folder.

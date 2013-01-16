@@ -36,6 +36,8 @@ public class Main extends JFrame
 	private Object startupSynch = new Object();
 	private ActionQueue queue = new ActionQueue();
 	
+	private static String VERSION = "1.02";
+	
 	/**
 	 * Gets synch object used during startup to prevent multiple folder
 	 * searches at once (non-Windows platforms only).
@@ -64,7 +66,7 @@ public class Main extends JFrame
 
 	public Main()
 	{
-		super("FileCopier 1.01");
+		super("FileCopier");
 		getContentPane().setLayout(new BorderLayout());
 		doc = new DefaultStyledDocument();
 		doc.addStyle("_DEFAULT", null).addAttribute(StyleConstants.Foreground, Color.LIGHT_GRAY);
@@ -144,7 +146,7 @@ public class Main extends JFrame
 	private void parseArgs(JMenu wipeMenu)
 	{
 		addText("FileCopier ");
-		addText("1.0", "white");
+		addText(VERSION, "white");
 		addText("\n\n");
 
 		Path settings = FileSystems.getDefault().getPath(System.getProperty("user.home"), ".filecopier");
