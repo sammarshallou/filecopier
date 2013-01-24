@@ -40,7 +40,7 @@ public class Main extends JFrame implements ActionQueue.Handler
 	private boolean status = false, queueBusy = false;
 	private Set<Watcher> waitingStartup = new HashSet<Watcher>();
 
-	private static String VERSION = "1.03";
+	private static String VERSION = "1.04";
 	
 	/**
 	 * Gets synch object used during startup to prevent multiple folder

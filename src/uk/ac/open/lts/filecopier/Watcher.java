@@ -48,32 +48,32 @@ class Watcher extends Thread
 		this.target = target;
 		this.style = style;
 		this.num = num;
-		
+
 		start();
 	}
-	
+
 	private void addIdent()
 	{
 		main.addText(num + " ", style);
 	}
-	
+
 	public Path getSource()
 	{
 		return source;
 	}
-	
+
 	public Path getTarget()
 	{
 		return target;
 	}
-	
+
 	private void debugLog(Path relative, Kind<?> kind)
 	{
 		if(!DEBUG)
 		{
 			return;
 		}
-		
+
 		try
 		{
 			if(debugWriter == null)
@@ -89,7 +89,7 @@ class Watcher extends Thread
 			e.printStackTrace();
 		}
 	}
-	
+
 	@Override
 	public void run()
 	{
@@ -120,7 +120,7 @@ class Watcher extends Thread
 				Class<?> c = Class.forName("com.sun.nio.file.ExtendedWatchEventModifier");
 				WatchEvent.Modifier[] modifiers = new WatchEvent.Modifier[]
 				{
-					(WatchEvent.Modifier)(c.getField("FILE_TREE").get(null)) 
+					(WatchEvent.Modifier)(c.getField("FILE_TREE").get(null))
 				};
 				WatchKey key = source.register(service, kinds, modifiers);
 				keys.put(key, source);
@@ -160,7 +160,7 @@ class Watcher extends Thread
 				return;
 			}
 
-			// Display to indicate that it's ready. 
+			// Display to indicate that it's ready.
 			synchronized(main)
 			{
 				addIdent();
@@ -185,7 +185,7 @@ class Watcher extends Thread
 				{
 					// Block until events are present.
 					WatchKey key = service.take();
-	
+
 					// Read all events.
 					eventLoop: for(WatchEvent<?> event : key.pollEvents())
 					{
@@ -254,7 +254,7 @@ class Watcher extends Thread
 			}
 		}
 	}
-	
+
 	/**
 	 * Called to cause the entire folder to be wiped and re-copied.
 	 */
@@ -262,10 +262,10 @@ class Watcher extends Thread
 	{
 		main.getQueue().copy(this, FileSystems.getDefault().getPath("."));
 	}
-	
+
 	/**
 	 * Deletes contents of the target path and re-copies it from the source path.
-	 * 
+	 *
 	 * This method is called on the QUEUE thread not the watcher thread.
 	 *
 	 * @param path Relative path
@@ -277,7 +277,7 @@ class Watcher extends Thread
 		Path targetCopy = target.resolve(path);
 
 		main.addText("Copy");
-		
+
 		if(Files.isDirectory(sourceCopy))
 		{
 			try
@@ -302,7 +302,7 @@ class Watcher extends Thread
 						}
 						return FileVisitResult.CONTINUE;
 					}
-					
+
 					@Override
 					public FileVisitResult preVisitDirectory(Path dir,
 						BasicFileAttributes attrs) throws IOException
@@ -345,7 +345,7 @@ class Watcher extends Thread
 		}
 		main.addText("\n");
 	}
-	
+
 	private void showSlowTime(long start)
 	{
 		long time = System.currentTimeMillis() - start;
@@ -355,10 +355,10 @@ class Watcher extends Thread
 			main.addText("ms ");
 		}
 	}
-	
+
 	/**
 	 * Deletes contents of the target path.
-	 * 
+	 *
 	 * This method is called on the QUEUE thread not the watcher thread.
 	 *
 	 * @param path Relative path
@@ -370,13 +370,13 @@ class Watcher extends Thread
 			main.addText("\n");
 		}
 	}
-	
+
 	private boolean innerDelete(Path path, boolean displayAnyway)
 	{
 		Path targetCopy = target.resolve(path);
-		
+
 		// Skip if it doesn't exist or if you're trying to delete the root folder
-		boolean exists = Files.exists(targetCopy); 
+		boolean exists = Files.exists(targetCopy);
 		boolean isRoot = false;
 		if(exists)
 		{
@@ -389,7 +389,7 @@ class Watcher extends Thread
 				throw new Error(e);
 			}
 		}
-		if(!exists || isRoot)
+		if(!exists)
 		{
 			if(displayAnyway)
 			{
@@ -422,6 +422,8 @@ class Watcher extends Thread
 			try
 			{
 				long start = System.currentTimeMillis();
+
+				// Delete children.
 				Files.walkFileTree(targetCopy, new SimpleFileVisitor<Path>()
 				{
 					private int dot;
@@ -439,7 +441,7 @@ class Watcher extends Thread
 						}
 						return FileVisitResult.CONTINUE;
 					}
-	
+
 					@Override
 					public FileVisitResult postVisitDirectory(Path path, IOException e)
 						throws IOException
@@ -452,16 +454,22 @@ class Watcher extends Thread
 						return FileVisitResult.CONTINUE;
 					}
 				});
-				try
+
+				// Delete folder itself - except root folder.
+				if(!isRoot)
 				{
-					deleteIfPresent(targetCopy);
+					try
+					{
+						deleteIfPresent(targetCopy);
+					}
+					catch(IOException e)
+					{
+						main.addText(" ERROR ", "error");
+						e.printStackTrace();
+						return true;
+					}
 				}
-				catch(IOException e)
-				{
-					main.addText(" ERROR ", "error");
-					e.printStackTrace();
-					return true;
-				}
+
 				main.addText(" OK ", "key");
 				showSlowTime(start);
 			}
@@ -490,7 +498,7 @@ class Watcher extends Thread
 		}
 		return true;
 	}
-	
+
 	private static void deleteIfPresent(Path file) throws IOException
 	{
 		try
