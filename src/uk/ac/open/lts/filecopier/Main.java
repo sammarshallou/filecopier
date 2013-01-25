@@ -35,13 +35,15 @@ public class Main extends JFrame implements ActionQueue.Handler
 	private LinkedList<Watcher> watchers = new LinkedList<Watcher>();
 	private Object startupSynch = new Object();
 	private ActionQueue queue = new ActionQueue(this);
+	private int displayLines = 0;
 	
 	private Image idleIcon, busyIcon;
 	private boolean status = false, queueBusy = false;
 	private Set<Watcher> waitingStartup = new HashSet<Watcher>();
 
-	private static String VERSION = "1.04";
-	
+	private static String VERSION = "1.05";
+	private static int MAX_LINES = 500;
+
 	/**
 	 * Gets synch object used during startup to prevent multiple folder
 	 * searches at once (non-Windows platforms only).
@@ -258,7 +260,43 @@ public class Main extends JFrame implements ActionQueue.Handler
 			{
 				try
 				{
-					doc.insertString(doc.getLength(), text, attributes);
+					int currentLength = doc.getLength();
+
+					// Count number of lines.
+					for(int i=0; i<text.length(); i++)
+					{
+						if(text.charAt(i) == '\n')
+						{
+							displayLines++;
+						}
+					}
+
+					// If there's too many, delete text from the front.
+					while(displayLines > MAX_LINES)
+					{
+						// Find first LF.
+						int lf = -1;
+						for(int pos = 0; pos < currentLength; pos+=128)
+						{
+							String text = doc.getText(0, 128);
+							lf = text.indexOf('\n');
+							if (lf != -1)
+							{
+								lf += pos;
+								break;
+							}
+						}
+						// This is not possible if there's at least one line.
+						assert(lf != -1);
+
+						// Delete up to and including LF.
+						doc.remove(0, lf + 1);
+						currentLength -= (lf + 1);
+						displayLines --;
+					}
+
+					// Insert new string.
+					doc.insertString(currentLength, text, attributes);
 				}
 				catch(BadLocationException e)
 				{
