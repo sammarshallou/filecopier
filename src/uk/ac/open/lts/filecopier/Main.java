@@ -41,7 +41,7 @@ public class Main extends JFrame implements ActionQueue.Handler
 	private boolean status = false, queueBusy = false;
 	private Set<Watcher> waitingStartup = new HashSet<Watcher>();
 
-	private static String VERSION = "1.05";
+	private static String VERSION = "1.06";
 	private static int MAX_LINES = 500;
 
 	/**
@@ -254,6 +254,10 @@ public class Main extends JFrame implements ActionQueue.Handler
 
 	public void addText(final String text, final AttributeSet attributes)
 	{
+		if(text == null)
+		{
+			throw new NullPointerException("Text may not be null");
+		}
 		Runnable r = new Runnable()
 		{
 			public void run()

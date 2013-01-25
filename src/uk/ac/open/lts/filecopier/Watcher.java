@@ -189,21 +189,40 @@ class Watcher extends Thread
 					// Read all events.
 					eventLoop: for(WatchEvent<?> event : key.pollEvents())
 					{
-						Path sourcePath = keys.get(key).resolve(event.context().toString());
-						Path relative = source.relativize(sourcePath);
+						Path sourcePath, relative;
+						if(event.context() == null)
+						{
+							sourcePath = null;
+							relative = source.relativize(sourcePath);
+						}
+						else
+						{
+							sourcePath = keys.get(key).resolve(event.context().toString());
+							relative = source.relativize(sourcePath);
+						}
 						Kind<?> kind = event.kind();
 						debugLog(relative, kind);
-						if(relative.isAbsolute() || relative.startsWith(".."))
+						if(relative != null)
 						{
-							// Should not get results outside the source folder.
-							throw new Exception("Unexpected path " + sourcePath);
-						}
-						// Don't do folders we are skipping.
-						for(int i=0; i<relative.getNameCount(); i++)
-						{
-							if(Main.SKIP_FOLDERS.contains(relative.getName(i).toString()))
+							if(relative.isAbsolute() || relative.startsWith(".."))
 							{
-								continue eventLoop;
+								// Should not get results outside the source folder.
+								throw new Exception("Unexpected path " + sourcePath);
+							}
+							// Don't do folders we are skipping.
+							for(int i=0; i<relative.getNameCount(); i++)
+							{
+								if(Main.SKIP_FOLDERS.contains(relative.getName(i).toString()))
+								{
+									continue eventLoop;
+								}
+							}
+						}
+						else
+						{
+							if(!event.kind().equals(StandardWatchEventKinds.OVERFLOW))
+							{
+								throw new Exception("Unexpected null path for event kind " + event.kind());
 							}
 						}
 						if(event.kind().equals(StandardWatchEventKinds.ENTRY_CREATE))
@@ -225,7 +244,7 @@ class Watcher extends Thread
 						else if(event.kind().equals(StandardWatchEventKinds.OVERFLOW))
 						{
 							// This should re-copy everything.
-							main.getQueue().copy(this, relative);
+							main.getQueue().copy(this, source.relativize(source));
 						}
 					}
 
@@ -338,9 +357,18 @@ class Watcher extends Thread
 			}
 			catch(IOException e)
 			{
-				main.addText(" ERROR\n", "error");
-				e.printStackTrace();
-				return;
+				// If the source file was already deleted, then ignore this
+				// error as we do not need it to be copied now.
+				if (!Files.exists(sourceCopy))
+				{
+					main.addText(" ABSENT ", "key");
+				}
+				else
+				{
+					main.addText(" ERROR\n", "error");
+					e.printStackTrace();
+					return;
+				}
 			}
 		}
 		main.addText("\n");
