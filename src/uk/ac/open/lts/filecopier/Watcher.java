@@ -31,6 +31,8 @@ class Watcher extends Thread
 {
 	private static boolean DEBUG = false;
 	private static Writer debugWriter;
+	
+	private static final int MAX_COPY_RETRIES = 3;
 
 	private Main main;
 	private Path source, target;
@@ -156,6 +158,7 @@ class Watcher extends Thread
 				{
 					addIdent();
 					main.addError("Error starting watcher", e.getMessage());
+					main.markError();
 				}
 				return;
 			}
@@ -193,7 +196,7 @@ class Watcher extends Thread
 						if(event.context() == null)
 						{
 							sourcePath = null;
-							relative = source.relativize(sourcePath);
+							relative = null;
 						}
 						else
 						{
@@ -260,8 +263,14 @@ class Watcher extends Thread
 				{
 					addIdent();
 					main.addError("Error watching", e.getMessage());
+					main.markError();
 					e.printStackTrace();
 				}
+			}
+			finally
+			{
+				// Always mark error when exiting this thread.
+				main.markError();
 			}
 		}
 		catch(IOException e)
@@ -288,10 +297,12 @@ class Watcher extends Thread
 	 * This method is called on the QUEUE thread not the watcher thread.
 	 *
 	 * @param path Relative path
+	 * @return True if completed without error 
 	 */
-	public void copy(Path path)
+	public boolean copy(Path path)
 	{
-		innerDelete(path, true);
+		boolean[] errorState = { false };
+		innerDelete(path, true, errorState);
 		Path sourceCopy = source.resolve(path);
 		Path targetCopy = target.resolve(path);
 
@@ -303,7 +314,8 @@ class Watcher extends Thread
 			{
 				Files.createDirectories(targetCopy.getParent());
 				long start = System.currentTimeMillis();
-				Files.walkFileTree(sourceCopy, new SimpleFileVisitor<Path>()
+				final boolean[] walkError = { false };
+				Files.walkFileTree(sourceCopy, new FileVisitor<Path>()
 				{
 					private int dot;
 
@@ -312,7 +324,15 @@ class Watcher extends Thread
 						throws IOException
 					{
 						Path targetFile = target.resolve(source.relativize(file));
-						Files.copy(file, targetFile);
+						try
+						{
+							copyWithRetry(file, targetFile);
+						}
+						catch(NoSuchFileException e)
+						{
+							// Indicates the file was deleted while copying, so ignore.
+							walkError[0] = true;
+						}
 						dot++;
 						if(dot >= 100)
 						{
@@ -334,15 +354,57 @@ class Watcher extends Thread
 						Files.createDirectories(targetDir);
 						return FileVisitResult.CONTINUE;
 					}
+
+					@Override
+					public FileVisitResult postVisitDirectory(Path dir, IOException e)
+						throws IOException
+					{
+						if(e != null)
+						{
+							if (e instanceof NoSuchFileException)
+							{
+								walkError[0] = true;
+							}
+							else
+							{
+								throw e;
+							}
+						}
+						return FileVisitResult.CONTINUE;
+					}
+
+					@Override
+					public FileVisitResult visitFileFailed(Path arg0, IOException e)
+						throws IOException
+					{
+						if (e instanceof NoSuchFileException)
+						{
+							walkError[0] = true;
+						}
+						else
+						{
+							throw e;
+						}
+						walkError[0] = true;
+						return FileVisitResult.CONTINUE;
+					}
 				});
-				main.addText(" OK ", "key");
+				if (walkError[0])
+				{
+					// NoSuchFileException, thrown if things are changing underfoot.
+					main.addText(" PARTIAL ", "key");
+				}
+				else
+				{
+					main.addText(" OK ", "key");
+				}
 				showSlowTime(start);
 			}
 			catch(IOException e)
 			{
 				main.addText(" ERROR\n", "error");
 				e.printStackTrace();
-				return;
+				return false;
 			}
 		}
 		else
@@ -351,27 +413,58 @@ class Watcher extends Thread
 			{
 				Files.createDirectories(targetCopy.getParent());
 				long start = System.currentTimeMillis();
-				Files.copy(sourceCopy, targetCopy);
+				copyWithRetry(sourceCopy, targetCopy);
 				main.addText(" OK ", "key");
 				showSlowTime(start);
 			}
-			catch(IOException e)
+			catch(NoSuchFileException e)
 			{
 				// If the source file was already deleted, then ignore this
 				// error as we do not need it to be copied now.
-				if (!Files.exists(sourceCopy))
-				{
-					main.addText(" ABSENT ", "key");
-				}
-				else
-				{
-					main.addText(" ERROR\n", "error");
-					e.printStackTrace();
-					return;
-				}
+				main.addText(" ABSENT ", "key");
+			}
+			catch(IOException e)
+			{
+				// Other errors are shown as error.
+				main.addText(" ERROR\n", "error");
+				e.printStackTrace();
+				return false;
 			}
 		}
 		main.addText("\n");
+		return !errorState[0];
+	}
+
+	/**
+	 * Same as Files.copy, but retries for errors which were observed to be
+	 * temporary due to simultaneous changes during the copy process.
+	 * @param source Source path
+	 * @param target Target path
+	 * @throws IOException Exceptions that we don't retry for, or failed retries
+	 */
+	private static void copyWithRetry(Path source, Path target) throws IOException
+	{
+		IOException last = null;
+		for(int retries = 0; retries < MAX_COPY_RETRIES; retries ++)
+		{
+			try
+			{
+				Files.copy(source, target);
+				return;
+			}
+			catch(AccessDeniedException e)
+			{
+				last = e;
+				try
+				{
+					sleep(50);
+				}
+				catch(InterruptedException e1)
+				{
+				}
+			}
+		}
+		throw last;
 	}
 
 	private void showSlowTime(long start)
@@ -390,16 +483,19 @@ class Watcher extends Thread
 	 * This method is called on the QUEUE thread not the watcher thread.
 	 *
 	 * @param path Relative path
+	 * @return True if completed without error 
 	 */
-	public void delete(Path path)
+	public boolean delete(Path path)
 	{
-		if(innerDelete(path, false))
+		boolean[] errorState = { false };
+		if(innerDelete(path, false, errorState))
 		{
 			main.addText("\n");
 		}
+		return !errorState[0];
 	}
 
-	private boolean innerDelete(Path path, boolean displayAnyway)
+	private boolean innerDelete(Path path, boolean displayAnyway, boolean[] errorState)
 	{
 		Path targetCopy = target.resolve(path);
 
@@ -493,6 +589,7 @@ class Watcher extends Thread
 					catch(IOException e)
 					{
 						main.addText(" ERROR ", "error");
+						errorState[0] = true;
 						e.printStackTrace();
 						return true;
 					}
@@ -504,6 +601,7 @@ class Watcher extends Thread
 			catch(IOException e)
 			{
 				main.addText(" ERROR ", "error");
+				errorState[0] = true;
 				e.printStackTrace();
 				return true;
 			}
@@ -520,6 +618,7 @@ class Watcher extends Thread
 			catch(IOException e)
 			{
 				main.addText(" ERROR ", "error");
+				errorState[0] = true;
 				e.printStackTrace();
 				return true;
 			}

@@ -50,6 +50,11 @@ public class ActionQueue extends Thread
 		 * Called from the action queue thread. 
 		 */
 		public void markIdle();
+
+		/**
+		 * Called if an error occurs.
+		 */
+		public void markError();
 	}
 
 	private abstract static class Action
@@ -70,7 +75,7 @@ public class ActionQueue extends Thread
 			return due - System.currentTimeMillis();
 		}
 
-		abstract void apply();
+		abstract boolean apply();
 		abstract boolean makesUnnecessary(Action futureAction);
 		abstract boolean madeUnnecessary(Action futureAction);
 	}
@@ -82,9 +87,10 @@ public class ActionQueue extends Thread
 			super(watcher, path);
 		}
 
-		void apply()
+		@Override
+		boolean apply()
 		{
-			watcher.copy(path);
+			return watcher.copy(path);
 		}
 
 		@Override
@@ -121,9 +127,10 @@ public class ActionQueue extends Thread
 			super(watcher, path);
 		}
 
-		void apply()
+		@Override
+		boolean apply()
 		{
-			watcher.delete(path);
+			return watcher.delete(path);
 		}
 
 		@Override
@@ -235,13 +242,21 @@ public class ActionQueue extends Thread
 				}
 	
 				// Carry out action
-				first.apply();
+				if(!first.apply())
+				{
+					handler.markError();
+				}
 			}
 		}
 		catch(InterruptedException e)
 		{
 			// If interrupted, there is not a lot we can do, so exit.
 			System.exit(0);
+		}
+		finally
+		{
+			// If this thread ends, indicate error
+			handler.markError();
 		}
 	}
 }

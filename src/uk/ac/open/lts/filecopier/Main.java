@@ -37,11 +37,12 @@ public class Main extends JFrame implements ActionQueue.Handler
 	private ActionQueue queue = new ActionQueue(this);
 	private int displayLines = 0;
 	
-	private Image idleIcon, busyIcon;
-	private boolean status = false, queueBusy = false;
+	private Image idleIcon, busyIcon, idleErrorIcon, busyErrorIcon;
+	private boolean status = false, queueBusy = false,
+		error = false, showingError = false;
 	private Set<Watcher> waitingStartup = new HashSet<Watcher>();
 
-	private static String VERSION = "1.06";
+	private static String VERSION = "1.10";
 	private static int MAX_LINES = 500;
 
 	/**
@@ -123,6 +124,8 @@ public class Main extends JFrame implements ActionQueue.Handler
 		setSize(600, 800);
 		idleIcon = Toolkit.getDefaultToolkit().createImage(getClass().getResource("icon.png"));
 		busyIcon = Toolkit.getDefaultToolkit().createImage(getClass().getResource("icon.busy.png"));
+		idleErrorIcon = Toolkit.getDefaultToolkit().createImage(getClass().getResource("icon.error.png"));
+		busyErrorIcon = Toolkit.getDefaultToolkit().createImage(getClass().getResource("icon.busy.error.png"));
 
 		setState(JFrame.ICONIFIED);
 		setVisible(true);
@@ -238,7 +241,10 @@ public class Main extends JFrame implements ActionQueue.Handler
 	void addError(String start, String text)
 	{
 		addText(start);
-		addText(text, "error");
+		if(text != null)
+		{
+			addText(text, "error");
+		}
 		addText("\n");
 	}
 
@@ -366,14 +372,38 @@ public class Main extends JFrame implements ActionQueue.Handler
 			}
 		});
 	}
+
+	@Override
+	public void markError()
+	{
+		SwingUtilities.invokeLater(new Runnable()
+		{
+			public void run()
+			{
+				error = true;
+				updateStatus();
+			}
+		});
+	}
 	
 	private void updateStatus()
 	{
+		boolean changed = false;
 		boolean busy = queueBusy || !waitingStartup.isEmpty();
 		if(status != busy)
 		{
 			status = busy;
-			setIconImage(busy ? busyIcon : idleIcon);
+			changed = true;
+		}
+		if (error != showingError)
+		{
+			showingError = error;
+			changed = true;
+		}
+		if(changed)
+		{
+			setIconImage(busy ? (showingError ? busyErrorIcon : busyIcon) : 
+				(showingError ? idleErrorIcon : idleIcon));
 		}
 	}
 	
