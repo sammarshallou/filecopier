@@ -42,7 +42,7 @@ public class Main extends JFrame implements ActionQueue.Handler
 		error = false, showingError = false;
 	private Set<Watcher> waitingStartup = new HashSet<Watcher>();
 
-	private static String VERSION = "1.10";
+	private static String VERSION = "1.11";
 	private static int MAX_LINES = 500;
 
 	/**
