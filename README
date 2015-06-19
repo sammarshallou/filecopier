@@ -44,6 +44,14 @@ it as filecopier.jar for simplicity.
   - On non-Windows platforms, use forward slashes as normal.
   - If there are any special characters, this file should have UTF-8 encoding.
 
+  You can also enable debugging by adding this as the first line of the 
+  .filecopier file:
+
+  debug => true
+
+  This will output extra information in the event of an error, and log events
+  to ~/.filecopier.debug.log.
+
 * Initial usage
 
   Double-click on filecopier.jar to run it. It starts minimised, but you can

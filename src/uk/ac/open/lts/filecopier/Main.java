@@ -39,7 +39,7 @@ public class Main extends JFrame implements ActionQueue.Handler
 	
 	private Image idleIcon, busyIcon, idleErrorIcon, busyErrorIcon;
 	private boolean status = false, queueBusy = false,
-		error = false, showingError = false;
+		error = false, showingError = false, debug = false;
 	private Set<Watcher> waitingStartup = new HashSet<Watcher>();
 
 	private static String VERSION = "1.11";
@@ -185,6 +185,10 @@ public class Main extends JFrame implements ActionQueue.Handler
 					continue;
 				}
 				String sourceText = m.group(1).trim(), targetText = m.group(2).trim();
+				if (sourceText.toLowerCase().equals("debug")) {
+					debug = true;
+					continue;
+				}
 				FileSystem fileSystem = FileSystems.getDefault();
 				final Path source = fileSystem.getPath(sourceText),
 					target = fileSystem.getPath(targetText);
@@ -216,7 +220,7 @@ public class Main extends JFrame implements ActionQueue.Handler
 				final Watcher watcher;
 				synchronized(watchers)
 				{
-					watcher = new Watcher(this, source, target, "c" + (index % COLORS.length), index);
+					watcher = new Watcher(this, source, target, "c" + (index % COLORS.length), index, debug);
 					watchers.add(watcher);
 				}
 				waitingStartup.add(watcher);

@@ -29,7 +29,7 @@ import java.util.*;
  */
 class Watcher extends Thread
 {
-	private static boolean DEBUG = false;
+	private boolean debug = false;
 	private static Writer debugWriter;
 	
 	private static final int MAX_COPY_RETRIES = 3;
@@ -42,7 +42,7 @@ class Watcher extends Thread
 	private boolean isWindows;
 	private Map<WatchKey, Path> keys = new HashMap<WatchKey, Path>(1024);
 
-	Watcher(Main main, Path source, Path target, String style, int num)
+	Watcher(Main main, Path source, Path target, String style, int num, boolean debug)
 	{
 		super("Watch thread " + num);
 		this.main = main;
@@ -50,6 +50,7 @@ class Watcher extends Thread
 		this.target = target;
 		this.style = style;
 		this.num = num;
+		this.debug = debug;
 
 		start();
 	}
@@ -71,7 +72,7 @@ class Watcher extends Thread
 
 	private void debugLog(Path relative, Kind<?> kind)
 	{
-		if(!DEBUG)
+		if(!debug)
 		{
 			return;
 		}
@@ -404,6 +405,9 @@ class Watcher extends Thread
 			{
 				main.addText(" ERROR\n", "error");
 				e.printStackTrace();
+				if (debug) {
+					main.addText("\n" + e.toString() + "\n");
+				}
 				return false;
 			}
 		}
@@ -428,6 +432,9 @@ class Watcher extends Thread
 				// Other errors are shown as error.
 				main.addText(" ERROR\n", "error");
 				e.printStackTrace();
+				if (debug) {
+					main.addText("\n" + e.toString() + "\n");
+				}
 				return false;
 			}
 		}
@@ -591,6 +598,9 @@ class Watcher extends Thread
 						main.addText(" ERROR ", "error");
 						errorState[0] = true;
 						e.printStackTrace();
+						if (debug) {
+							main.addText("\n" + e.toString() + "\n");
+						}
 						return true;
 					}
 				}
@@ -603,6 +613,9 @@ class Watcher extends Thread
 				main.addText(" ERROR ", "error");
 				errorState[0] = true;
 				e.printStackTrace();
+				if (debug) {
+					main.addText("\n" + e.toString() + "\n");
+				}
 				return true;
 			}
 		}
@@ -620,6 +633,9 @@ class Watcher extends Thread
 				main.addText(" ERROR ", "error");
 				errorState[0] = true;
 				e.printStackTrace();
+				if (debug) {
+					main.addText("\n" + e.toString() + "\n");
+				}
 				return true;
 			}
 		}
