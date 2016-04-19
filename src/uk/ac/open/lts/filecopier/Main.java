@@ -42,7 +42,7 @@ public class Main extends JFrame implements ActionQueue.Handler
 		error = false, showingError = false, debug = false;
 	private Set<Watcher> waitingStartup = new HashSet<Watcher>();
 
-	private static String VERSION = "1.11";
+	private static String VERSION = "1.12";
 	private static int MAX_LINES = 500;
 
 	/**
@@ -69,7 +69,7 @@ public class Main extends JFrame implements ActionQueue.Handler
 	}; 
 	
 	public final static HashSet<String> SKIP_FOLDERS = new HashSet<String>(
-		Arrays.asList(new String[] { ".git" }));
+		Arrays.asList(new String[] { ".git", ".idea", "vendor", "node_modules" }));
 
 	public Main()
 	{
