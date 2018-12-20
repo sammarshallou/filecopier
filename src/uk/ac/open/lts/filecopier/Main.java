@@ -23,6 +23,7 @@ import java.awt.event.*;
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
+import java.util.List;
 import java.util.regex.*;
 
 import javax.swing.*;
@@ -42,7 +43,7 @@ public class Main extends JFrame implements ActionQueue.Handler
 		error = false, showingError = false, debug = false;
 	private Set<Watcher> waitingStartup = new HashSet<Watcher>();
 
-	private static String VERSION = "1.12";
+	private static String VERSION = "1.13";
 	private static int MAX_LINES = 500;
 
 	/**
@@ -67,9 +68,12 @@ public class Main extends JFrame implements ActionQueue.Handler
 	{
 		Color.MAGENTA, Color.CYAN, Color.YELLOW
 	}; 
-	
-	public final static HashSet<String> SKIP_FOLDERS = new HashSet<String>(
+
+	private final static HashSet<String> SKIP_FOLDERS = new HashSet<String>(
 		Arrays.asList(new String[] { ".git", ".idea", "vendor", "node_modules" }));
+
+	private final static List<String> DO_NOT_SKIP_PATH_SEGMENTS =
+			Arrays.asList(new String[] { "question/type/stack/question/type/stack/thirdparty/php-peg/lib/vendor" });
 
 	public Main()
 	{
@@ -421,5 +425,23 @@ public class Main extends JFrame implements ActionQueue.Handler
 				updateStatus();
 			}
 		});
+	}
+
+	public static boolean shouldSkipPath(Path path)
+	{
+		if (!SKIP_FOLDERS.contains(path.getFileName().toString()))
+		{
+			// Not a skip folder.
+			return false;
+		}
+		// Looks like a skip folder, is it an exception?
+		for (String exceptedPath : DO_NOT_SKIP_PATH_SEGMENTS)
+		{
+			if (path.endsWith(exceptedPath))
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 }

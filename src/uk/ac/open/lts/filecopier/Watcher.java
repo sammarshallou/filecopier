@@ -141,7 +141,7 @@ class Watcher extends Thread
 						public FileVisitResult preVisitDirectory(Path path,
 							BasicFileAttributes attr) throws IOException
 						{
-							if(Main.SKIP_FOLDERS.contains(path.getFileName().toString()))
+							if(Main.shouldSkipPath(path))
 							{
 								return FileVisitResult.SKIP_SUBTREE;
 							}
@@ -216,7 +216,7 @@ class Watcher extends Thread
 							// Don't do folders we are skipping.
 							for(int i=0; i<relative.getNameCount(); i++)
 							{
-								if(Main.SKIP_FOLDERS.contains(relative.getName(i).toString()))
+								if(Main.shouldSkipPath(relative))
 								{
 									continue eventLoop;
 								}
@@ -347,7 +347,7 @@ class Watcher extends Thread
 					public FileVisitResult preVisitDirectory(Path dir,
 						BasicFileAttributes attrs) throws IOException
 					{
-						if(Main.SKIP_FOLDERS.contains(dir.getFileName().toString()))
+						if(Main.shouldSkipPath(dir))
 						{
 							return FileVisitResult.SKIP_SUBTREE;
 						}
