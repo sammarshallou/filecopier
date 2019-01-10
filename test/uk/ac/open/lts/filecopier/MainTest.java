@@ -1,7 +1,6 @@
 package uk.ac.open.lts.filecopier;
 
 import static org.junit.jupiter.api.Assertions.*;
-
 import java.io.File;
 
 import org.junit.jupiter.api.Test;
@@ -27,8 +26,17 @@ public class MainTest
 	}
 
 	@Test
-	void pathThatShouldNotBeSkippedBecauaseSpecialCase()
+	void otherPathThatShouldBeSkipped()
 	{
-		assertFalse(Main.shouldSkipPath(new File("moodle/question/type/stack/question/type/stack/thirdparty/php-peg/lib/vendor").toPath()));
+		assertTrue(Main.shouldSkipPath(new File(".git").toPath()));
+		assertTrue(Main.shouldSkipPath(new File(".git/objects/df/c680b62abdf39c3a47d6a4a5169eb9a70a6b66").toPath()));
+	}
+
+	@Test
+	void pathThatShouldNotBeSkippedBecauseSpecialCase()
+	{
+		assertFalse(Main.shouldSkipPath(new File("question/type/stack/thirdparty/php-peg/lib/vendor").toPath()));
+		assertFalse(Main.shouldSkipPath(new File("question/type/stack/thirdparty/php-peg/lib/vendor/frogs/whatever").toPath()));
+		assertFalse(Main.shouldSkipPath(new File("question\\type\\stack\\thirdparty\\php-peg\\lib\\vendor\\silly").toPath()));
 	}
 }

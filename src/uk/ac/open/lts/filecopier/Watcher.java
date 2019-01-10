@@ -214,12 +214,9 @@ class Watcher extends Thread
 								throw new Exception("Unexpected path " + sourcePath);
 							}
 							// Don't do folders we are skipping.
-							for(int i=0; i<relative.getNameCount(); i++)
+							if(Main.shouldSkipPath(relative))
 							{
-								if(Main.shouldSkipPath(relative))
-								{
-									continue eventLoop;
-								}
+								continue eventLoop;
 							}
 						}
 						else
