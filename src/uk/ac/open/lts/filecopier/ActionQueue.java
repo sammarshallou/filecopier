@@ -158,6 +158,7 @@ public class ActionQueue extends Thread
 
 	public void copy(Watcher watcher, Path fileOrFolder)
 	{
+		System.out.println("COPY: " + fileOrFolder);
 		synchronized(queue)
 		{
 			queue.addLast(new CopyAction(watcher, fileOrFolder));

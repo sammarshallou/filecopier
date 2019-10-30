@@ -44,7 +44,7 @@ public class Main extends JFrame implements ActionQueue.Handler
 		error = false, showingError = false, debug = false;
 	private Set<Watcher> waitingStartup = new HashSet<Watcher>();
 
-	private static String VERSION = "1.15";
+	private static String VERSION = "1.16";
 	private static int MAX_LINES = 500;
 
 	/**
@@ -447,10 +447,7 @@ public class Main extends JFrame implements ActionQueue.Handler
 				skip = true;
 				break;
 			}
-			if (!pathSegment.equals("."))
-			{
-				root = false;				
-			}
+			root = false;
 		}
 		if (!skip)
 		{

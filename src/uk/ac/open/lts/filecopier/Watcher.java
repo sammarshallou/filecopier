@@ -301,8 +301,8 @@ class Watcher extends Thread
 	{
 		boolean[] errorState = { false };
 		innerDelete(path, true, errorState);
-		Path sourceCopy = source.resolve(path);
-		Path targetCopy = target.resolve(path);
+		Path sourceCopy = source.resolve(path).normalize();
+		Path targetCopy = target.resolve(path).normalize();
 
 		main.addText("Copy");
 
@@ -344,7 +344,7 @@ class Watcher extends Thread
 					public FileVisitResult preVisitDirectory(Path dir,
 						BasicFileAttributes attrs) throws IOException
 					{
-						if(Main.shouldSkipPath(dir))
+						if(Main.shouldSkipPath(source.relativize(dir)))
 						{
 							return FileVisitResult.SKIP_SUBTREE;
 						}
