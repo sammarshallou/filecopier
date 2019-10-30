@@ -29,6 +29,7 @@ import java.util.regex.*;
 import javax.swing.*;
 import javax.swing.text.*;
 
+@SuppressWarnings("serial")
 public class Main extends JFrame implements ActionQueue.Handler
 {
 	private JTextPane pane;
@@ -43,7 +44,7 @@ public class Main extends JFrame implements ActionQueue.Handler
 		error = false, showingError = false, debug = false;
 	private Set<Watcher> waitingStartup = new HashSet<Watcher>();
 
-	private static String VERSION = "1.14";
+	private static String VERSION = "1.15";
 	private static int MAX_LINES = 500;
 
 	/**
@@ -69,8 +70,11 @@ public class Main extends JFrame implements ActionQueue.Handler
 		Color.MAGENTA, Color.CYAN, Color.YELLOW
 	}; 
 
-	private final static HashSet<String> SKIP_FOLDERS = new HashSet<String>(
-		Arrays.asList(new String[] { ".git", ".idea", "vendor", "node_modules" }));
+	private final static HashSet<String> SKIP_FOLDERS_ANY_LEVEL = new HashSet<String>(			
+		Arrays.asList(new String[] { ".git", ".idea" }));
+
+	private final static HashSet<String> SKIP_FOLDERS_ROOT = new HashSet<String>(			
+			Arrays.asList(new String[] { "vendor", "node_modules" }));
 
 	private final static List<String> DO_NOT_SKIP_PATH_SEGMENTS =
 			Arrays.asList(new String[] { "question/type/stack/thirdparty/php-peg/lib/vendor" });
@@ -429,13 +433,23 @@ public class Main extends JFrame implements ActionQueue.Handler
 
 	public static boolean shouldSkipPath(Path path)
 	{
-		boolean skip = false;
+		boolean skip = false, root = true;
 		for(int i=0; i<path.getNameCount(); i++)
 		{
-			if (SKIP_FOLDERS.contains(path.getName(i).toString()))
+			String pathSegment = path.getName(i).toString();
+			if (SKIP_FOLDERS_ANY_LEVEL.contains(pathSegment))
 			{
 				skip = true;
 				break;
+			}
+			if (root && SKIP_FOLDERS_ROOT.contains(pathSegment))
+			{
+				skip = true;
+				break;
+			}
+			if (!pathSegment.equals("."))
+			{
+				root = false;				
 			}
 		}
 		if (!skip)
